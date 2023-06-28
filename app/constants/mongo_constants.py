@@ -1,0 +1,16 @@
+class MongoDBCollections:
+    wallets = 'wallets'
+    projects = 'projects'
+    smart_contracts = 'smart_contracts'
+    abi = 'abi'
+    configs = 'configs'
+    multichain_wallets = 'multichain_wallets'
+    multichain_wallets_credit_scores = 'multichain_wallets_credit_scores'
+
+    is_part_ofs = 'is_part_ofs'
+    transfers = 'transfers'
+    deposits = 'deposits'
+    withdraws = 'withdraws'
+    borrows = 'borrows'
+    repays = 'repays'
+    liquidates = 'liquidates'

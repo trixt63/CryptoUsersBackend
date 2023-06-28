@@ -1,0 +1,49 @@
+[
+  {
+    "_id": "0x38_0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c_0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c_0x0000000000000000000000000000000000000000",
+    "chainId": "0x38",
+    "createdAt": 1599119584,
+    "dappName": "Wrapped BNB",
+    "projectName": "Binance Smart Chain",
+    "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+    "tokenIn": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+    "tokenOut": "0x0000000000000000000000000000000000000000",
+    "currentROI": 0,
+    "convertRate": 1,
+    "exchangeRate": 1,
+    "safetyIndex": 1000,
+    "currentGasFee": {
+      "amount": 0,
+      "valueInUSD": 0
+    },
+    "url": "https://bscscan.com/token/0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+  },
+  {
+    "_id": "0x38_0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c_0x0000000000000000000000000000000000000000_0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+    "chainId": "0x38",
+    "createdAt": 1599119584,
+    "dappName": "Wrapped BNB",
+    "projectName": "Binance Smart Chain",
+    "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+    "tokenIn": "0x0000000000000000000000000000000000000000",
+    "tokenOut": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+    "currentROI": 0,
+    "convertRate": 1,
+    "exchangeRate": 1,
+    "safetyIndex": 1000,
+    "currentGasFee": {
+      "amount": 0,
+      "valueInUSD": 0
+    },
+    "url": "https://bscscan.com/token/0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+  },
+  {
+    "_id": "0x38_0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+    "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+    "chainId": "0x38",
+    "name": "Wrapped BNB",
+    "projectName": "Binance Smart Chain",
+    "type": "WRAP",
+    "url": "https://bscscan.com/token/0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+  }
+]
