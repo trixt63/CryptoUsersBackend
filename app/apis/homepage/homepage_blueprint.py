@@ -22,17 +22,17 @@ async def get_types_info(request: Request):
     returned_dict = {
         "CEX": {
             'numberOfApplications': community_db.count_projects_by_category('Cexes'),
-            'numberOfUsers': community_db.count_cex_users(),
+            'numberOfUsers': community_db.count_users_by_category('Cexes'),
             'numberOfRealUsers': 0
         },
         "DEX": {
             'numberOfApplications': community_db.count_projects_by_category('Dexes'),
-            'numberOfUsers': community_db.count_dex_users(),
+            'numberOfUsers': community_db.count_users_by_category('Dexes'),
             'numberOfRealUsers': 0
         },
         "Lendings": {
             'numberOfApplications': community_db.count_projects_by_category('Lending'),
-            'numberOfUsers': community_db.count_lending_users(),
+            'numberOfUsers': community_db.count_users_by_category('Lending'),
             'numberOfRealUsers': 0
         },
     }
@@ -46,57 +46,31 @@ async def get_types_info(request: Request):
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
 # @validate(query=OverviewQuery)
 async def get_types_info(request: Request):
-    app = {
-      "_id": "acsi-finance",
-      "idDApp": "acsi-finance",
-      "imgUrl": "https://dappimg.com/media/image/dapp/62fdd6e6b7684393884f29a5addbec3b.blob",
-      "name": "ACSI Finance",
-      "category": "exchange",
-      "deployedChains": [
-        "0x38"
-      ],
-      "numberOfUsers": 45,
-      "numberOfRealUsers": 45,
-      "numberOfTransactions": 409,
-      "transactionVolume": 316220,
-      # "socialSignal": 255,
-      "sources": [
-        "dapp"
-      ],
-      "id": "acsi-finance"
-    }
-
-    returned_data = [app] * 10
-
-    return json(returned_data)
+    community_db: MongoDBCommunity = request.app.ctx.community_db
+    data = list(community_db.get_applications(category="Cexes",
+                                              sort_by="spotVolume"))
+    return json(data)
 
 
-@bp.get('/defies')
+@bp.get('/dexes')
 @openapi.tag("Homepage")
-@openapi.summary("Get top DeFis applications")
+@openapi.summary("Get top Dexes applications")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
 # @validate(query=OverviewQuery)
 async def get_types_info(request: Request):
-    app = {
-      "_id": "acsi-finance",
-      "idDApp": "acsi-finance",
-      "imgUrl": "https://dappimg.com/media/image/dapp/62fdd6e6b7684393884f29a5addbec3b.blob",
-      "name": "ACSI Finance",
-      "category": "exchange",
-      "deployedChains": [
-        "0x38"
-      ],
-      "numberOfUsers": 45,
-      "numberOfRealUsers": 45,
-      "numberOfTransactions": 409,
-      "transactionVolume": 316220,
-      # "socialSignal": 255,
-      "sources": [
-        "dapp"
-      ],
-      "id": "acsi-finance"
-    }
+    community_db: MongoDBCommunity = request.app.ctx.community_db
+    data = list(community_db.get_applications(category="Dexes",
+                                              sort_by="tvl"))
+    return json(data)
 
-    returned_data = [app] * 10
 
-    return json(returned_data)
+@bp.get('/lendings')
+@openapi.tag("Homepage")
+@openapi.summary("Get top Lendings applications")
+@openapi.parameter(name="chain", description=f"Chain ID", location="query")
+# @validate(query=OverviewQuery)
+async def get_types_info(request: Request):
+    community_db: MongoDBCommunity = request.app.ctx.community_db
+    data = list(community_db.get_applications(category="Lending",
+                                              sort_by="tvl"))
+    return json(data)

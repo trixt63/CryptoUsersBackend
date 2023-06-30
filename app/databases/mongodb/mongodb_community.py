@@ -1,7 +1,7 @@
 from typing import List
-
 import pymongo
 from pymongo import MongoClient, UpdateOne
+from pymongo.cursor import Cursor
 
 from config import MongoDBCommunityConfig
 # from constants.mongodb_constants import WALLETS_COL, CreatedPairEventsCollection
@@ -43,16 +43,38 @@ class MongoDBCommunity:
         _filter = {'category': category}
         return self.projects_col.count_documents(_filter)
 
-    def count_cex_users(self):
-        return self._deposit_connections_col.estimated_document_count()
+    def count_users_by_category(self, category: str):
+        """Get number of users for Intro pages"""
+        if category == 'Cexes':
+            return self._deposit_connections_col.estimated_document_count()
+        elif category == 'Lending':
+            logger.info(self._lending_wallets_col.estimated_document_count())
+            return self._lending_wallets_col.estimated_document_count()
+        elif category == 'Dexes':
+            n_deployers = self._lp_deployers_col.estimated_document_count()
+            n_traders = self._lp_traders_col.estimated_document_count()
+            return n_deployers + n_traders
+        return 0
 
-    def count_dex_users(self):
-        n_deployers = self._lp_deployers_col.estimated_document_count()
-        n_traders = self._lp_traders_col.estimated_document_count()
-        return n_deployers + n_traders
+    def get_applications(self, category: str, sort_by=None, reverse=False, skip=None, limit=None, chain=None,):
+        """Get top applications for Intro pages"""
+        _filter = {'category': category}
+        if chain is not None:
+            _filter.update({'deployedChains': chain})
 
-    def count_lending_users(self):
-        return self._lending_wallets_col.estimated_document_count()
+        _projection = {
+            'name': 1,
+            'imgUrl': 1,
+            'links': 1,
+            'spotVolume': 1,
+            'tvl': 1,
+            'dexVolume': 1,
+            'socialAccounts': 1
+        }
+
+        cursor = self.projects_col.find(_filter, projection=_projection)
+        cursor = self.get_pagination_statement(cursor, sort_by, reverse, skip, limit)
+        return cursor
 
     # The next 3 functions are for analysis purpose ###
     def count_wallets(self, _filter):
@@ -99,4 +121,14 @@ class MongoDBCommunity:
             }
         }
         cursor = self.lp_tokens_col.find(filter_)
+        return cursor
+
+    @staticmethod
+    def get_pagination_statement(cursor: Cursor, sort_by=None, reverse: bool = False, skip: int = 0, limit: int = None):
+        if sort_by is not None:
+            cursor = cursor.sort(sort_by, -1 if reverse else 1)
+        if skip is not None:
+            cursor = cursor.skip(skip)
+        if limit is not None:
+            cursor = cursor.limit(limit)
         return cursor
