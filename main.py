@@ -12,6 +12,7 @@ from app.apis import api
 from app.databases.mongodb.async_blockchain_etl import AsyncBlockchainETL
 from app.databases.mongodb.blockchain_etl import BlockchainETL
 from app.databases.mongodb.mongodb_klg import MongoDB
+from app.databases.mongodb.mongodb_community import MongoDBCommunity
 from app.databases.postgresdb.token_transfer import TokenTransferDB
 from app.misc.log import log
 from config import Config, LocalDBConfig, RedisConfig, BlockchainETLConfig
@@ -27,6 +28,9 @@ app.blueprint(api)
 async def setup_db(_):
     app.ctx.db = MongoDB()
     log(f'Connected to KLG Database {app.ctx.db.connection_url}')
+
+    app.ctx.community_db = MongoDBCommunity()
+    log(f'Connected to Community Database {app.ctx.community_db.connection_url}')
 
     app.ctx.mongo = BlockchainETL(BlockchainETLConfig.TEST_CONNECTION_URL)
     app.ctx.etl = BlockchainETL(BlockchainETLConfig.CONNECTION_URL)

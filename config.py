@@ -66,6 +66,11 @@ class MongoDBConfig:
     DATABASE = os.getenv('MONGODB_DATABASE', 'knowledge_graph')
 
 
+class MongoDBCommunityConfig:
+    CONNECTION_URL = os.getenv("MONGODB_COMMUNITY_CONNECTION_URL")
+    DATABASE = os.getenv('MONGODB_COMMUNITY_DATABASE', 'TokenDatabase')
+
+
 class ScoreArangoConfig:
     CONNECTION_URL = os.getenv("SCORE_ARANGO_URL")
     DATABASE = os.getenv('SCORE_ARANGO_DB', 'klg_database')
