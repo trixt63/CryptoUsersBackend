@@ -8,7 +8,7 @@ from sanic.exceptions import BadRequest
 from sanic.log import logger
 from sanic_ext import openapi, validate
 
-from app.apis.portfolio.utils.utils import get_chains, check_address
+from app.apis._olds.portfolio.utils.utils import get_chains, check_address
 from app.databases.arangodb.klg_database import KLGDatabase
 from app.databases.mongodb.mongodb_klg import MongoDB
 from app.decorators.auth import protected, check_token

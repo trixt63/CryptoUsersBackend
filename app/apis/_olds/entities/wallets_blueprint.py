@@ -6,7 +6,7 @@ from sanic import Blueprint, Request
 from sanic import json
 from sanic_ext import openapi, validate
 
-from app.apis.portfolio.utils.utils import check_address, get_chains
+from app.apis._olds.portfolio.utils.utils import check_address, get_chains
 from app.constants.network_constants import EMPTY_TOKEN_IMG
 from app.constants.search_constants import SearchConstants, RelationshipType
 from app.constants.time_constants import TimeConstants

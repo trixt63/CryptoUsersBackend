@@ -17,29 +17,6 @@ from app.services.artifacts.protocols import ProjectCollectorTypes
 projects_bp = Blueprint('projects_blueprint', url_prefix='/projects')
 
 
-@projects_bp.get('/<project_id>/introduction')
-@openapi.tag("Project")
-@openapi.summary("Get project introduction")
-@openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="type", description=f"Type of project. Allowable values: defi, nft, exchange", required=True, location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
-@validate(query=OverviewQuery)
-async def get_introduction(request: Request, project_id, query: OverviewQuery):
-    chain_id = query.chain
-    chains = get_chains(chain_id)
-    project_type, type_ = get_project_type(query.type)
-
-    db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
-    project = get_project(db, project_id, chains, type_, project_type)
-
-    project_obj = get_info_to_project_obj(db=db, project=project, project_type=project_type, contract_information=False)
-    data = project_obj.get_introduction()
-    return json({
-        'id': project_id,
-        **data
-    })
-
-
 @projects_bp.get('/<project_id>/overview')
 @openapi.tag("Project")
 @openapi.summary("Get project overview")
@@ -53,62 +30,70 @@ async def get_overview(request: Request, project_id, query: OverviewQuery):
     project_type, type_ = get_project_type(query.type)
 
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
-    project = get_project(db, project_id, chains, type_, project_type)
+    # project = get_project(db, project_id, chains, type_, project_type)
+    project = {
+          "id": f"{project_id}",
+          "projectId": f"{project_id}",
+          "name": "Binance",
+          "imgUrl": "https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png",
+          "chains": [
+            "0x1",
+            "0x38"
+          ],
+          "projectType": "exchange",
+          "tags": [
+            "Spot Exchange",
+            "Derivative Exchange"
+          ],
+          "url": "https://www.binance.com/",
+          "socialNetworks": {
+            "telegram": "https://t.me/binanceexchange",
+            "twitter": "https://twitter.com/binance"
+          }
+    }
 
-    project_obj = get_info_to_project_obj(db=db, project=project, project_type=project_type)
-    data = project_obj.to_dict()
-    if project_obj.project_type == ProjectTypes.nft:
-        data['tokens'] = []
-    return json(data)
+    return json(project)
 
 
 @projects_bp.get('/<project_id>/stats')
 @openapi.tag("Project")
-@openapi.summary("Get project statistic information")
-@openapi.parameter(name="history", description=f"Return historical data or not", schema=bool, location="query")
+@openapi.summary("Get project introduction")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="type", description=f"Type of project. Allowable values: defi, nft, exchange", required=True, location="query")
+@openapi.parameter(name="type", description=f"Type of project. Allowable values: dex, lending, nft, exchange",
+                   required=True, location="query")
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
-@validate(query=StatsQuery)
-async def get_stats(request: Request, project_id, query: StatsQuery):
-    chain_id = query.chain
-    chains = get_chains(chain_id)
-    project_type, type_ = get_project_type(query.type)
-    history = query.history
+@validate(query=OverviewQuery)
+async def get_stats(request: Request, project_id, query: OverviewQuery):
+    stats = {
+      "id": f"{project_id}",
+      "volume": 95915987738.03323,
+      "volumeChangeRate": 1.284184833196924,
+      "numberOfMarkets": 1959,
+      "numberOfCoins": 386
+    }
 
-    db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
-    project = get_project(db, project_id, chains, type_, project_type)
-
-    project_obj = get_info_to_project_obj(db=db, project=project, project_type=project_type)
-    data = project_obj.get_stats(history=history)
-    return json({
-        'id': project_id,
-        **data
-    })
+    return json(stats)
 
 
-@projects_bp.get('/<project_id>/visualize')
+@projects_bp.get('/<project_id>/whales-list')
 @openapi.tag("Project")
-@openapi.summary("Get project visualize information")
+@openapi.summary("Get project overview")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
 @openapi.parameter(name="type", description=f"Type of project. Allowable values: defi, nft, exchange", required=True, location="query")
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
 @validate(query=OverviewQuery)
-async def get_visualize(request: Request, project_id, query: OverviewQuery):
-    chain_id = query.chain
-    chains = get_chains(chain_id)
-    project_type, type_ = get_project_type(query.type)
+async def get_whales(request: Request, project_id, query: OverviewQuery):
+    whales = [{
+        'id': '0xf977814e90da44bfa03b6295a0616a897441acec',
+        'address': '0xf977814e90da44bfa03b6295a0616a897441acec',
+        'estimatedBalance': 75034499.975,
+        'ownedBy': '0x1111111111111111111111111111111111111111',
+        'socialNetworks': {
+            'telegram': 'https://t.me/binanceexchange',
+            'twitter': 'https://twitter.com/binance'}
+    }] * 100
 
-    db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
-    project = get_project(db, project_id, chains, type_, project_type)
-
-    project_obj = get_info_to_project_obj(db=db, project=project, project_type=project_type)
-    visualize: Visualization = project_obj.get_visualize()
-
-    return json({
-        'id': project_id,
-        **visualize.to_dict()
-    })
+    return json(whales)
 
 
 def get_project_type(type_):

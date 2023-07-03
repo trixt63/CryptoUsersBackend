@@ -4,7 +4,7 @@ from sanic import Blueprint, Request
 from sanic import json
 from sanic_ext import openapi, validate
 
-from app.apis.portfolio.utils.utils import get_chains
+from app.apis._olds.portfolio.utils.utils import get_chains
 from app.databases.arangodb.klg_database import KLGDatabase
 from app.databases.mongodb.blockchain_etl import BlockchainETL
 from app.databases.mongodb.mongodb_klg import MongoDB

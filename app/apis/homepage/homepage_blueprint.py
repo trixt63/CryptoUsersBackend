@@ -49,6 +49,10 @@ async def get_types_info(request: Request):
     community_db: MongoDBCommunity = request.app.ctx.community_db
     data = list(community_db.get_applications(category="Cexes",
                                               sort_by="spotVolume"))
+    for datum in data:
+        datum['category'] = 'CEX'
+        datum['numberOfUsers'] = 0
+        datum['numberOfRealUsers'] = 0
     return json(data)
 
 
@@ -61,6 +65,10 @@ async def get_types_info(request: Request):
     community_db: MongoDBCommunity = request.app.ctx.community_db
     data = list(community_db.get_applications(category="Dexes",
                                               sort_by="tvl"))
+    for datum in data:
+        datum['category'] = 'DEX'
+        datum['numberOfUsers'] = 0
+        datum['numberOfRealUsers'] = 0
     return json(data)
 
 
@@ -73,4 +81,8 @@ async def get_types_info(request: Request):
     community_db: MongoDBCommunity = request.app.ctx.community_db
     data = list(community_db.get_applications(category="Lending",
                                               sort_by="tvl"))
+    for datum in data:
+        datum['category'] = 'Lending'
+        datum['numberOfUsers'] = 0
+        datum['numberOfRealUsers'] = 0
     return json(data)
