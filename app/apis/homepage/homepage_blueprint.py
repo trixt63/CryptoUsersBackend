@@ -50,6 +50,7 @@ async def get_types_info(request: Request):
     data = list(community_db.get_applications(category="Cexes",
                                               sort_by="spotVolume"))
     for datum in data:
+        datum['id'] = datum['_id']
         datum['category'] = 'CEX'
         datum['numberOfUsers'] = 0
         datum['numberOfRealUsers'] = 0
@@ -66,6 +67,7 @@ async def get_types_info(request: Request):
     data = list(community_db.get_applications(category="Dexes",
                                               sort_by="tvl"))
     for datum in data:
+        datum['id'] = datum['_id']
         datum['category'] = 'DEX'
         datum['numberOfUsers'] = 0
         datum['numberOfRealUsers'] = 0
@@ -82,6 +84,7 @@ async def get_types_info(request: Request):
     data = list(community_db.get_applications(category="Lending",
                                               sort_by="tvl"))
     for datum in data:
+        datum['id'] = datum['_id']
         datum['category'] = 'Lending'
         datum['numberOfUsers'] = 0
         datum['numberOfRealUsers'] = 0
