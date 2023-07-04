@@ -18,7 +18,7 @@ bp = Blueprint('cex_blueprint', url_prefix='/cex')
 
 
 @bp.get('/<project_id>/introduction')
-@openapi.tag("Project")
+@openapi.tag("Cex")
 @openapi.summary("Get project introduction")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
 # @openapi.parameter(name="type", description=f"Type of project. Allowable values: defi, nft, exchange", required=True, location="query")
@@ -52,7 +52,7 @@ async def get_overview(request: Request, project_id, query: OverviewQuery):
 
 
 @bp.get('/<project_id>/stats')
-@openapi.tag("Project")
+@openapi.tag("Cex")
 @openapi.summary("Get project introduction")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
 # @openapi.parameter(name="type", description=f"Type of project. Allowable values: dex, lending, nft, exchange",
@@ -72,7 +72,7 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
 
 
 @bp.get('/<project_id>/whales-list')
-@openapi.tag("Project")
+@openapi.tag("Cex")
 @openapi.summary("Get project overview")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
