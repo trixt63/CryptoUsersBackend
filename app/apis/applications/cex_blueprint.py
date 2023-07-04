@@ -17,9 +17,9 @@ from app.services.artifacts.protocols import ProjectCollectorTypes
 bp = Blueprint('cex_blueprint', url_prefix='/cex')
 
 
-@bp.get('/<project_id>/overview')
+@bp.get('/<project_id>/introduction')
 @openapi.tag("Project")
-@openapi.summary("Get project overview")
+@openapi.summary("Get project introduction")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
 # @openapi.parameter(name="type", description=f"Type of project. Allowable values: defi, nft, exchange", required=True, location="query")
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)

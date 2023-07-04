@@ -17,13 +17,13 @@ from app.services.artifacts.protocols import ProjectCollectorTypes
 bp = Blueprint('dex_blueprint', url_prefix='/dex')
 
 
-@bp.get('/<project_id>/overview')
+@bp.get('/<project_id>/introduction')
 @openapi.tag("Project")
 @openapi.summary("Get project overview")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
 @validate(query=OverviewQuery)
-async def get_overview(request: Request, project_id, query: OverviewQuery):
+async def get_introduction(request: Request, project_id, query: OverviewQuery):
     chain_id = query.chain
     chains = get_chains(chain_id)
     # project_type, type_ = get_project_type(query.type)
