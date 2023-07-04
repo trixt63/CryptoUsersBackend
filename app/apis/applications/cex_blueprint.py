@@ -8,59 +8,55 @@ from sanic_ext import openapi, validate
 from app.apis._olds.portfolio.utils.utils import get_chains
 from app.databases.arangodb.klg_database import KLGDatabase
 from app.databases.mongodb.mongodb_klg import MongoDB
-from app.models.entity.project import OverviewQuery, StatsQuery
+from app.models.entity.project import OverviewQuery
 from app.models.entity.projects import project_cls_mapping
 from app.models.entity.projects.project import ProjectTypes, Project
 from app.models.explorer.visualization import Visualization
 from app.services.artifacts.protocols import ProjectCollectorTypes
 
-projects_bp = Blueprint('projects_blueprint', url_prefix='/projects')
+bp = Blueprint('cex_blueprint', url_prefix='/cex')
 
 
-@projects_bp.get('/<project_id>/overview')
+@bp.get('/<project_id>/overview')
 @openapi.tag("Project")
 @openapi.summary("Get project overview")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="type", description=f"Type of project. Allowable values: defi, nft, exchange", required=True, location="query")
+# @openapi.parameter(name="type", description=f"Type of project. Allowable values: defi, nft, exchange", required=True, location="query")
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_overview(request: Request, project_id, query: OverviewQuery):
     chain_id = query.chain
     chains = get_chains(chain_id)
-    project_type, type_ = get_project_type(query.type)
+    # project_type, type_ = get_project_type(query.type)
 
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
     # project = get_project(db, project_id, chains, type_, project_type)
     project = {
-          "id": f"{project_id}",
-          "projectId": f"{project_id}",
-          "name": "Binance",
-          "imgUrl": "https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png",
-          "chains": [
-            "0x1",
-            "0x38"
-          ],
-          "projectType": "exchange",
-          "tags": [
-            "Spot Exchange",
-            "Derivative Exchange"
-          ],
-          "url": "https://www.binance.com/",
-          "socialNetworks": {
-            "telegram": "https://t.me/binanceexchange",
-            "twitter": "https://twitter.com/binance"
-          }
+      "id": f"{project_id}",
+      "projectId": f"{project_id}",
+      "name": "Binance",
+      "imgUrl": "https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png",
+      "chains": [
+        "0x1",
+        "0x38"
+      ],
+      "projectType": "exchange",
+      "url": "https://www.binance.com/",
+      "socialNetworks": {
+        "telegram": "https://t.me/binanceexchange",
+        "twitter": "https://twitter.com/binance"
+      }
     }
 
     return json(project)
 
 
-@projects_bp.get('/<project_id>/stats')
+@bp.get('/<project_id>/stats')
 @openapi.tag("Project")
 @openapi.summary("Get project introduction")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="type", description=f"Type of project. Allowable values: dex, lending, nft, exchange",
-                   required=True, location="query")
+# @openapi.parameter(name="type", description=f"Type of project. Allowable values: dex, lending, nft, exchange",
+#                    required=True, location="query")
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_stats(request: Request, project_id, query: OverviewQuery):
@@ -75,11 +71,10 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
     return json(stats)
 
 
-@projects_bp.get('/<project_id>/whales-list')
+@bp.get('/<project_id>/whales-list')
 @openapi.tag("Project")
 @openapi.summary("Get project overview")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="type", description=f"Type of project. Allowable values: defi, nft, exchange", required=True, location="query")
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_whales(request: Request, project_id, query: OverviewQuery):
@@ -87,7 +82,7 @@ async def get_whales(request: Request, project_id, query: OverviewQuery):
         'id': '0xf977814e90da44bfa03b6295a0616a897441acec',
         'address': '0xf977814e90da44bfa03b6295a0616a897441acec',
         'estimatedBalance': 75034499.975,
-        'ownedBy': '0x1111111111111111111111111111111111111111',
+        # 'ownedBy': '0x1111111111111111111111111111111111111111',
         'socialNetworks': {
             'telegram': 'https://t.me/binanceexchange',
             'twitter': 'https://twitter.com/binance'}
@@ -96,6 +91,7 @@ async def get_whales(request: Request, project_id, query: OverviewQuery):
     return json(whales)
 
 
+# ---------Helper functions---------
 def get_project_type(type_):
     allowable = {
         ProjectTypes.defi: ProjectCollectorTypes.defillama,

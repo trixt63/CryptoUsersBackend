@@ -1,7 +1,7 @@
 from sanic import Blueprint, Request
 from sanic import json
 from sanic.exceptions import NotFound
-from sanic_ext import openapi, validate
+from sanic_ext import openapi
 
 from app.constants.network_constants import EMPTY_TOKEN_IMG, Chain
 from app.databases.mongodb.mongodb_klg import MongoDB

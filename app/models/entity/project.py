@@ -4,7 +4,8 @@ from pydantic import BaseModel
 
 
 class OverviewQuery(BaseModel):
-    type: str
+    _id: str
+    # type: str
     chain: Optional[str] = None
 
 
