@@ -21,11 +21,15 @@ class MongoDBCommunity:
         self.connection = MongoClient(connection_url)
 
         self._db = self.connection[MongoDBCommunityConfig.DATABASE]
-        self.lp_tokens_col = self._db['lpTokens']
-        self.wallets_col = self._db[wallet_col]
-        self.projects_col = self._db[PROJECTS_COL]
+        self._lp_tokens_col = self._db['lpTokens']
+        self._wallets_col = self._db[wallet_col]
+        self._projects_col = self._db[PROJECTS_COL]
 
+        self._deposit_wallets_col = self._db['depositWallets']
         self._deposit_connections_col = self._db['deposit_connections']
+        self._users_social_col = self._db['users']
+        self._social_deposit_col = self._db['userSocial_deposit']
+        self._cex_users_col = self._db['cexUsers']
 
         self._lp_deployers_col = self._db['lpDeployers']
         self._lp_traders_col = self._db['lpTraders']
@@ -35,13 +39,13 @@ class MongoDBCommunity:
         self._create_index()
 
     def _create_index(self):
-        if 'wallets_number_of_txs_index_1' not in self.wallets_col.index_information():
-            self.wallets_col.create_index([('number_of_txs', 1)], name='wallets_number_of_txs_index_1')
+        if 'wallets_number_of_txs_index_1' not in self._wallets_col.index_information():
+            self._wallets_col.create_index([('number_of_txs', 1)], name='wallets_number_of_txs_index_1')
 
     # Home API
     def count_projects_by_category(self, category: str):
         _filter = {'category': category}
-        return self.projects_col.count_documents(_filter)
+        return self._projects_col.count_documents(_filter)
 
     def count_users_by_category(self, category: str):
         """Get number of users for Intro pages"""
@@ -72,20 +76,52 @@ class MongoDBCommunity:
             'socialAccounts': 1
         }
 
-        cursor = self.projects_col.find(_filter, projection=_projection)
+        cursor = self._projects_col.find(_filter, projection=_projection)
         cursor = self.get_pagination_statement(cursor, sort_by, reverse, skip, limit)
+        return cursor
+
+    # Application API
+    def get_project_users(self, project_id, projection=None):
+        """Get number of users of project"""
+        projection_statement = self.get_projection_statement(projection)
+        project_data = self._projects_col.find_one({'_id': project_id}, projection=projection_statement)
+        if project_data['category'] == 'Cexes':
+            return self._get_number_cex_users(project_id)
+        elif project_data['category'] == 'Dexes':
+            return self._get_number_dex_users(project_id)
+        elif project_data['category'] == 'Lending':
+            return self._get_number_lending_users(project_id)
+        else:
+            return None
+
+    def _get_number_cex_users(self, project_id):
+        _filter = {f"depositedExchanges.{project_id}": {'$exists': 1}}
+        return self._deposit_wallets_col.count_documents(_filter)
+
+    def _get_number_dex_users(self, project_id):
+        _filter_trader = {f"traderLPs.{project_id}": {"$exists": 1}}
+        return self._lp_traders_col.count_documents(_filter_trader)
+
+    def _get_number_lending_users(self, project_id):
+        _filter = {f"lendingPools.{project_id}": {"$exists": 1}}
+        return self._lending_wallets_col.count_documents(_filter)
+
+    # Cex application
+    def get_top_cex_users(self, project_id, limit=100):
+        _filter = {'exchange': project_id, 'socialAccounts': {"$exists": 1}}
+        cursor = self._cex_users_col.find(_filter).limit(limit)
         return cursor
 
     # The next 3 functions are for analysis purpose ###
     def count_wallets(self, _filter):
-        _count = self.wallets_col.count_documents(_filter)
+        _count = self._wallets_col.count_documents(_filter)
         return _count
 
     def count_wallets_each_chain(self, field_id, project_id, chain_id='0x38'):
         """Count number of wallets of each project on each chain"""
         _filter = {f"{field_id}.{project_id}": {"$exists": 1}}
         _projection = {f"{field_id}.{project_id}": 1}
-        deployments = self.wallets_col.find(_filter, _projection)
+        deployments = self._wallets_col.find(_filter, _projection)
         _count = 0
         for _depl in deployments:
             for project in _depl[field_id][project_id]:
@@ -98,7 +134,7 @@ class MongoDBCommunity:
         """Each CEX project stores a list of chain_ids, instead a list of objects like other type of project,
         so I need a separate function to handle this"""
         _filter = {f"{field_id}.{project_id}": chain_id}
-        _count = self.wallets_col.count_documents(_filter)
+        _count = self._wallets_col.count_documents(_filter)
         return _count
     # end analysis #############
 
@@ -106,7 +142,7 @@ class MongoDBCommunity:
     def get_latest_pair_id(self, chain_id: str):
         filter_ = {'chainId': chain_id}
         try:
-            latest_pair = self.lp_tokens_col.find_one(filter_, sort=[("pairId", pymongo.DESCENDING)])
+            latest_pair = self._lp_tokens_col.find_one(filter_, sort=[("pairId", pymongo.DESCENDING)])
             return latest_pair.get('pairId')
         except AttributeError as attr_e:
             logger.warning(f"Cannot get latest pairId from {chain_id}")
@@ -120,9 +156,12 @@ class MongoDBCommunity:
                 '$lt': end_pair_id
             }
         }
-        cursor = self.lp_tokens_col.find(filter_)
+        cursor = self._lp_tokens_col.find(filter_)
         return cursor
 
+    #######################
+    #       Common        #
+    #######################
     @staticmethod
     def get_pagination_statement(cursor: Cursor, sort_by=None, reverse: bool = False, skip: int = 0, limit: int = None):
         if sort_by is not None:
@@ -132,3 +171,14 @@ class MongoDBCommunity:
         if limit is not None:
             cursor = cursor.limit(limit)
         return cursor
+
+    @staticmethod
+    def get_projection_statement(projection: list = None):
+        if projection is None:
+            return None
+
+        projection_statements = {}
+        for field in projection:
+            projection_statements[field] = True
+
+        return projection_statements
