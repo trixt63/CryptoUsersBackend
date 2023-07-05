@@ -61,7 +61,7 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
 
     stats = {
       "id": project_id,
-      "volume": 95915987738.03323,
+      "volume": app_data['spotVolume'],
       "users": users_data,
     }
 

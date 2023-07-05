@@ -94,23 +94,33 @@ class MongoDBCommunity:
         else:
             return None
 
+    # Cex application
     def _get_number_cex_users(self, project_id):
         _filter = {f"depositedExchanges.{project_id}": {'$exists': 1}}
         return self._deposit_wallets_col.count_documents(_filter)
 
-    def _get_number_dex_users(self, project_id):
-        _filter_trader = {f"traderLPs.{project_id}": {"$exists": 1}}
-        return self._lp_traders_col.count_documents(_filter_trader)
-
-    def _get_number_lending_users(self, project_id):
-        _filter = {f"lendingPools.{project_id}": {"$exists": 1}}
-        return self._lending_wallets_col.count_documents(_filter)
-
-    # Cex application
     def get_top_cex_users(self, project_id, limit=100):
         _filter = {'exchange': project_id, 'socialAccounts': {"$exists": 1}}
         cursor = self._cex_users_col.find(_filter).limit(limit)
         return cursor
+
+    # Dex applications
+    def _get_number_dex_users(self, project_id):
+        _filter_trader = {f"tradedLPs.{project_id}": {"$exists": 1}}
+        return self._lp_traders_col.count_documents(_filter_trader)
+
+    def get_top_pairs(self, project_id, limit=100):
+        _filter = {'dex': project_id}
+        _projection = {'factory': 0, 'dex': 0, 'pairId': 0}
+        _sort = ("pairBalanceInUSD", -1)
+        cursor = self._lp_tokens_col.find(filter=_filter, projection=_projection).sort(*_sort).limit(limit)
+        return cursor
+
+    # Lending pools
+    def _get_number_lending_users(self, project_id):
+        _filter = {f"lendingPools.{project_id}": {"$exists": 1}}
+        return self._lending_wallets_col.count_documents(_filter)
+
 
     # The next 3 functions are for analysis purpose ###
     def count_wallets(self, _filter):
