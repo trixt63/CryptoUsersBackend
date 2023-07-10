@@ -55,7 +55,7 @@ async def get_introduction(request: Request, project_id, query: OverviewQuery):
 async def get_stats(request: Request, project_id, query: OverviewQuery):
     stats = {
         "id": f"{project_id}",
-        "tvl": 95915987738.03323,
+        "tvl": 0,
         "users": 0,
         "totalDeposited": 0,
         "totalBorrowed": 0
@@ -74,6 +74,7 @@ async def get_top_wallets(request: Request, project_id, query: OverviewQuery):
     pairs = [{
         'id': '0x804678fa97d91b974ec2af3c843270886528a9e6',
         'address': '0x804678fa97d91b974ec2af3c843270886528a9e6',
+        'numberOfRelatedWallets': 0,
         'deposited': 0,
         'borrowed': 0,
     }] * 10
