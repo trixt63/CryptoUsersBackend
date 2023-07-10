@@ -78,19 +78,20 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_whales(request: Request, project_id, query: OverviewQuery):
-    # whales = [{
-    #     'id': '0xf977814e90da44bfa03b6295a0616a897441acec',
-    #     'address': '0xf977814e90da44bfa03b6295a0616a897441acec',
-    #     'estimatedBalance': 75034499.975,
-    #     'socialNetworks': {
-    #         'telegram': 'https://t.me/binanceexchange',
-    #         'twitter': 'https://twitter.com/binance'}
-    # }] * 100
+    top_wallets = [{
+        'id': project_id,
+        'depositWallets': [],
+        'userWallets': [],
+        'socialNetworks': {
+            'telegram': 'https://t.me/binanceexchange',
+            'twitter': 'https://twitter.com/binance'
+        }
+    }] * 10
 
-    community_db: MongoDBCommunity = request.app.ctx.community_db
-    wallets = list(community_db.get_top_cex_users(project_id))
+    # community_db: MongoDBCommunity = request.app.ctx.community_db
+    # wallets = list(community_db.get_top_cex_users(project_id))
 
-    return json(wallets)
+    return json(top_wallets)
 
 
 def get_project(db: Union[MongoDB, KLGDatabase], project_id, chains=[]):

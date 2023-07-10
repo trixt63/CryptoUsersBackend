@@ -54,7 +54,10 @@ async def get_types_info(request: Request):
         datum['category'] = 'CEX'
         datum['numberOfUsers'] = 0
         datum['numberOfRealUsers'] = 0
-    return json(data)
+    return json({
+        'numberOfDocs': len(data),
+        'docs': data
+    })
 
 
 @bp.get('/dexes')
@@ -71,8 +74,10 @@ async def get_types_info(request: Request):
         datum['category'] = 'DEX'
         datum['numberOfUsers'] = 0
         datum['numberOfRealUsers'] = 0
-    return json(data)
-
+    return json({
+        'numberOfDocs': len(data),
+        'docs': data
+    })
 
 @bp.get('/lendings')
 @openapi.tag("Homepage")
@@ -88,4 +93,7 @@ async def get_types_info(request: Request):
         datum['category'] = 'Lending'
         datum['numberOfUsers'] = 0
         datum['numberOfRealUsers'] = 0
-    return json(data)
+    return json({
+        'numberOfDocs': len(data),
+        'docs': data
+    })

@@ -122,7 +122,6 @@ class MongoDBCommunity:
         _filter = {f"lendingPools.{project_id}": {"$exists": 1}}
         return self._lending_wallets_col.count_documents(_filter)
 
-
     # The next 3 functions are for analysis purpose ###
     def count_wallets(self, _filter):
         _count = self._wallets_col.count_documents(_filter)
