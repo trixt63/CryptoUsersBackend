@@ -54,8 +54,11 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
     community_db: MongoDBCommunity = request.app.ctx.community_db
 
-    app_data = get_project(db, project_id)
-    users_data = community_db.get_project_users(project_id)
+    chain_id = query.chain or '0x38'
+    chains = get_chains(chain_id)
+
+    app_data = get_project(db, project_id, chains)
+    users_data = community_db.get_project_users(chain_id, project_id)
     if not app_data or not users_data:
         raise NotFound(f'Project with id {project_id}')
 

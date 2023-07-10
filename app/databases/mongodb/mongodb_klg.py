@@ -4,12 +4,8 @@ from pymongo import MongoClient, UpdateOne
 from pymongo.cursor import Cursor
 
 from app.constants.mongo_constants import MongoDBCollections
-from app.constants.network_constants import DEFAULT_CREDIT_SCORE
-from app.constants.score_constants import WalletCreditScoreWeightConstant
 from app.constants.search_constants import SearchConstants
 from app.decorators.time_exe import sync_log_time_exe, TimeExeTag
-from app.utils.format_utils import about
-from app.utils.list_dict_utils import sort_log
 from app.utils.logger_utils import get_logger
 from app.utils.search_data_utils import get_smart_contract_type
 from config import MongoDBConfig

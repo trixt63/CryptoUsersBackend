@@ -81,12 +81,12 @@ class MongoDBCommunity:
         return cursor
 
     # Application API
-    def get_project_users(self, project_id, projection=None):
+    def get_project_users(self, chain_id, project_id, projection=None):
         """Get number of users of project"""
         projection_statement = self.get_projection_statement(projection)
-        project_data = self._projects_col.find_one({'_id': project_id}, projection=projection_statement)
+        project_data = self._projects_col.find_one(filter={'_id': project_id})
         if project_data['category'] == 'Cexes':
-            return self._get_number_cex_users(project_id)
+            return self._get_number_cex_users(chain_id, project_id)
         elif project_data['category'] == 'Dexes':
             return self._get_number_dex_users(project_id)
         elif project_data['category'] == 'Lending':
@@ -95,8 +95,9 @@ class MongoDBCommunity:
             return None
 
     # Cex application
-    def _get_number_cex_users(self, project_id):
-        _filter = {f"depositedExchanges.{project_id}": {'$exists': 1}}
+    def _get_number_cex_users(self, chain_id, project_id):
+        # TODO: add chainId
+        _filter = {"depositedExchanges": project_id}
         return self._deposit_wallets_col.count_documents(_filter)
 
     def get_top_cex_users(self, project_id, limit=100):
