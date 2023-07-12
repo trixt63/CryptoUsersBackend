@@ -27,7 +27,7 @@ async def get_overview(request: Request, project_id, query: OverviewQuery):
     # project_type, type_ = get_project_type(query.type)
 
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
-    data = get_project(db, project_id)
+    data = get_project(db, project_id, chains)
 
     project_url = data["socialAccounts"].pop('website')
     project = {
@@ -36,7 +36,8 @@ async def get_overview(request: Request, project_id, query: OverviewQuery):
       "name": data["name"],
       "imgUrl": data["imgUrl"],
       "url": project_url,
-      "socialNetworks": data["socialAccounts"]
+      "socialNetworks": data["socialAccounts"],
+      "chains": data.get('deployedChains', []),
     }
 
     return json(project)
@@ -94,7 +95,7 @@ async def get_whales(request: Request, project_id, query: OverviewQuery):
     return json(top_wallets)
 
 
-def get_project(db: Union[MongoDB, KLGDatabase], project_id, chains=[]):
+def get_project(db: Union[MongoDB, KLGDatabase], project_id, chains):
     project = db.get_project(project_id)
     if not project or not filter(lambda x: x in project.get('deployedChains', []), chains):
         raise NotFound(f'Project with id {project_id}')
