@@ -89,35 +89,9 @@ class MongoDB:
     #       Token         #
     #######################
 
-    def get_token_by_id_coingecko(self, coin_id, chain_id=None, projection=None):
-        filter_statement = {'idCoingecko': coin_id}
-        if chain_id is not None:
-            filter_statement.update({'chainId': chain_id})
-        projection_statement = self.get_projection_statement(projection)
-        cursor = self._smart_contracts_col.find(filter_statement, projection=projection_statement)
+    def get_token(self, chain_id, address):
+        cursor = self._smart_contracts_col.find_one({'_id': f"{chain_id}_{address}"})
         return cursor
-
-    def get_tokens_by_id(self, token_id, chains, projection=None):
-        filter_statement = {}
-        chain_id = token_id.split('_')[0]
-        if chain_id in chains:
-            filter_statement.update({'_id': token_id})
-        else:
-            filter_statement.update({'idCoingecko': token_id, 'chainId': {'$in': chains}})
-
-        if (projection is not None) and ('tags' not in projection):
-            projection.append('tags')
-        projection_statement = self.get_projection_statement(projection)
-
-        cursor = self._smart_contracts_col.find(filter_statement, projection=projection_statement)
-
-        tokens = []
-        for doc in cursor:
-            contract_type = get_smart_contract_type(doc)
-            if contract_type != SearchConstants.token:
-                continue
-            tokens.append(doc)
-        return tokens
 
     #######################
     #      Wallet         #

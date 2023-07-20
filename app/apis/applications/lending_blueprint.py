@@ -5,7 +5,7 @@ from sanic import json
 from sanic.exceptions import NotFound, BadRequest
 from sanic_ext import openapi, validate
 
-from app.apis._olds.portfolio.utils.utils import get_chains
+# from app.apis._olds.portfolio.utils.utils import get_chains
 from app.databases.arangodb.klg_database import KLGDatabase
 from app.databases.mongodb.mongodb_klg import MongoDB
 from app.models.entity.project import OverviewQuery
@@ -21,7 +21,7 @@ bp = Blueprint('lending_blueprint', url_prefix='/lending')
 @validate(query=OverviewQuery)
 async def get_introduction(request: Request, project_id, query: OverviewQuery):
     chain_id = query.chain
-    chains = get_chains(chain_id)
+    # chains = get_chains(chain_id)
     # project_type, type_ = get_project_type(query.type)
 
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db

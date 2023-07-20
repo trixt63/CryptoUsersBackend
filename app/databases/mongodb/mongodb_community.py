@@ -29,7 +29,8 @@ class MongoDBCommunity:
         self._deposit_connections_col = self._db['deposit_connections']
         self._users_social_col = self._db['users']
         self._social_deposit_col = self._db['userSocial_deposit']
-        self._cex_users_col = self._db['cexUsers']
+
+        self._groups_col = self._db['groups']
 
         self._lp_deployers_col = self._db['lpDeployers']
         self._lp_traders_col = self._db['lpTraders']
@@ -100,9 +101,12 @@ class MongoDBCommunity:
         _filter = {"depositedExchanges": project_id}
         return self._deposit_wallets_col.count_documents(_filter)
 
-    def get_top_cex_users(self, project_id, limit=100):
-        _filter = {'exchange': project_id, 'socialAccounts': {"$exists": 1}}
-        cursor = self._cex_users_col.find(_filter).limit(limit)
+    # def get_top_cex_users(self, project_id, limit=100):
+    #     _filter = {'exchange': project_id, 'socialAccounts': {"$exists": 1}}
+    #     cursor = self._cex_users_col.find(_filter).limit(limit)
+    #     return cursor
+    def get_whales_list(self, project_id):
+        cursor = self._groups_col.find({'num_user': {'$gt': 1}}).limit(100)
         return cursor
 
     # Dex applications
@@ -115,6 +119,10 @@ class MongoDBCommunity:
         _projection = {'factory': 0, 'dex': 0, 'pairId': 0}
         _sort = ("pairBalanceInUSD", -1)
         cursor = self._lp_tokens_col.find(filter=_filter, projection=_projection).sort(*_sort).limit(limit)
+        return cursor
+
+    def get_dex_pair(self, chain_id, address):
+        cursor = self._lp_tokens_col.find_one(filter={'_id': f"{chain_id}_{address}"})
         return cursor
 
     # Lending pools

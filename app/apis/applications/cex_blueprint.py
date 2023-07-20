@@ -5,7 +5,7 @@ from sanic import json
 from sanic.exceptions import NotFound, BadRequest
 from sanic_ext import openapi, validate
 
-from app.apis._olds.portfolio.utils.utils import get_chains
+# from app.apis._olds.portfolio.utils.utils import get_chains
 from app.databases.arangodb.klg_database import KLGDatabase
 from app.databases.mongodb.mongodb_klg import MongoDB
 from app.databases.mongodb.mongodb_community import MongoDBCommunity
@@ -23,11 +23,11 @@ bp = Blueprint('cex_blueprint', url_prefix='/cex')
 @validate(query=OverviewQuery)
 async def get_overview(request: Request, project_id, query: OverviewQuery):
     chain_id = query.chain
-    chains = get_chains(chain_id)
+    # chains = get_chains(chain_id)
     # project_type, type_ = get_project_type(query.type)
 
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
-    data = get_project(db, project_id, chains)
+    data = get_project(db, project_id, chains=[chain_id])
 
     project_url = data["socialAccounts"].pop('website')
     project = {
@@ -56,9 +56,9 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
     community_db: MongoDBCommunity = request.app.ctx.community_db
 
     chain_id = query.chain or '0x38'
-    chains = get_chains(chain_id)
+    # chains = get_chains(chain_id)
 
-    app_data = get_project(db, project_id, chains)
+    app_data = get_project(db, project_id, chains=[chain_id])
     users_data = community_db.get_project_users(chain_id, project_id)
     if not app_data or not users_data:
         raise NotFound(f'Project with id {project_id}')
@@ -89,10 +89,23 @@ async def get_whales(request: Request, project_id, query: OverviewQuery):
         }
     }] * 10
 
-    # community_db: MongoDBCommunity = request.app.ctx.community_db
-    # wallets = list(community_db.get_top_cex_users(project_id))
+    community_db: MongoDBCommunity = request.app.ctx.community_db
+    wallets = list(community_db.get_whales_list(project_id))
 
-    return json(top_wallets)
+    returned_data = [
+        {
+            'id': project_id,
+            'userWallets': wallet['user_wallets'],
+            'depositWallets': wallet['deposit_wallets'],
+            'socialNetworks': {
+                'telegram': 'https://t.me/binanceexchange',
+                'twitter': 'https://twitter.com/binance'
+            }
+        }
+        for wallet in wallets
+    ]
+
+    return json(returned_data)
 
 
 def get_project(db: Union[MongoDB, KLGDatabase], project_id, chains):
