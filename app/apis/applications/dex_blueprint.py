@@ -26,17 +26,17 @@ async def get_introduction(request: Request, project_id, query: OverviewQuery):
     # project_type, type_ = get_project_type(query.type)
 
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
-    dex_data = get_project(db, project_id=project_id)
+    project = get_project(db, project_id=project_id)
     # project = get_project(db, project_id, chains, type_, project_type)
-    project_url = dex_data["socialAccounts"].pop('website')
+    project_url = project["socialAccounts"].pop('website')
     project = {
       "id": f"{project_id}",
       "projectId": f"{project_id}",
-      "name": dex_data["name"],
-      "imgUrl": dex_data["imgUrl"],
-      "chains": dex_data["deployedChains"],
+      "name": project["name"],
+      "imgUrl": project["imgUrl"],
+      "chains": project["deployedChains"],
       "url": project_url,
-      "socialNetworks": dex_data["socialAccounts"],
+      "socialNetworks": project["socialAccounts"],
     }
 
     return json(dict(project))
@@ -49,17 +49,18 @@ async def get_introduction(request: Request, project_id, query: OverviewQuery):
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_stats(request: Request, project_id, query: OverviewQuery):
+    chain_id = query.chain
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
     community_db: MongoDBCommunity = request.app.ctx.community_db
 
-    app_data = get_project(db, project_id)
-    users_data = community_db.get_project_users(project_id)
-    if not app_data or not users_data:
+    project = get_project(db, project_id)
+    users_data = community_db.get_project_users(chain_id, project_id)
+    if not project or not users_data:
         raise NotFound(f'Project with id {project_id}')
 
     stats = {
       "id": f"{project_id}",
-      "tvl": app_data['tvl'],
+      "tvl": project['tvl'],
       "traders": users_data,
       "realTraders": 0,
       "providers": 0,

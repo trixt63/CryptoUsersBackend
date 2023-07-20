@@ -43,7 +43,9 @@ class MongoDBCommunity:
         if 'wallets_number_of_txs_index_1' not in self._wallets_col.index_information():
             self._wallets_col.create_index([('number_of_txs', 1)], name='wallets_number_of_txs_index_1')
 
-    # Home API
+    #######################
+    #       Home API      #
+    #######################
     def count_projects_by_category(self, category: str):
         _filter = {'category': category}
         return self._projects_col.count_documents(_filter)
@@ -81,7 +83,9 @@ class MongoDBCommunity:
         cursor = self.get_pagination_statement(cursor, sort_by, reverse, skip, limit)
         return cursor
 
-    # Application API
+    #######################
+    #     Applications    #
+    #######################
     def get_project_users(self, chain_id, project_id, projection=None):
         """Get number of users of project"""
         projection_statement = self.get_projection_statement(projection)
@@ -130,7 +134,20 @@ class MongoDBCommunity:
         _filter = {f"lendingPools.{project_id}": {"$exists": 1}}
         return self._lending_wallets_col.count_documents(_filter)
 
-    # The next 3 functions are for analysis purpose ###
+    # Sample top wallets
+    def get_sample_dex_traders_wallets(self, chain_id, project_id):
+        _filter = {f"lpTraded.{project_id}": {"$exists": 1}}
+        cursor = self._lp_traders_col.find(_filter).limit(10)
+        return cursor
+
+    def get_sample_lending_wallets(self, chain_id, project_id):
+        _filter = {f"lendingPools.{project_id}": {"$exists": 1}}
+        cursor = self._lending_wallets_col.find(_filter).limit(10)
+        return cursor
+
+    #######################
+    #   Analysis Purpose  #
+    #######################
     def count_wallets(self, _filter):
         _count = self._wallets_col.count_documents(_filter)
         return _count

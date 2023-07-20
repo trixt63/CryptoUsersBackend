@@ -48,19 +48,28 @@ async def get_introduction(request: Request, pair_address, query: OverviewQuery)
     return json(pair_info)
 
 
-@bp.get('/<project_id>/<pair_address>/stats')
+@bp.get('/<pair_address>/stats')
 @openapi.tag("Dex Pair")
-@openapi.summary("Get project introduction")
+@openapi.summary("Get project statistics")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="pair_address", description="Pair address", location="path", required=True)
 @validate(query=OverviewQuery)
-async def get_stats(request: Request, project_id, pair_address, query: OverviewQuery):
+async def get_stats(request: Request, pair_address, query: OverviewQuery):
+    chain_id = query.chain
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
+    community_db: MongoDBCommunity = request.app.ctx.community_db
+
+    # get data
+    pair_data = community_db.get_dex_pair(chain_id=chain_id, address=pair_address)
+
+    dex_id = pair_data['dex']
+    project_data = db.get_project(dex_id)
+
     stats = {
-        "projectId": project_id,
+        "projectId": project_data['_id'],
         "id": pair_address,
         "traders": 0,
-        "realTraders": 1959,
+        "realTraders": 0,
         "providers": 0,
         "realProviders": 0
     }
@@ -68,21 +77,29 @@ async def get_stats(request: Request, project_id, pair_address, query: OverviewQ
     return json(stats)
 
 
-@bp.get('/<project_id>/<pair_address>/top-traders')
+@bp.get('/<pair_address>/top-traders')
 @openapi.tag("Dex Pair")
-@openapi.summary("Get project top pairs")
+@openapi.summary("Get top contracts")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="pair_address", description="Pair address", location="path", required=True)
 @validate(query=OverviewQuery)
-async def get_top_traders(request: Request, project_id, pair_address, query: OverviewQuery):
+async def get_top_traders(request: Request, pair_address, query: OverviewQuery):
+    community_db: MongoDBCommunity = request.app.ctx.community_db
+    chain_id = query.chain or '0x38'
+
+    pair_data = community_db.get_dex_pair(chain_id, pair_address)
+    project_id = pair_data['dex']
+
+    wallets_data = community_db.get_sample_dex_traders_wallets(chain_id, project_id)
+
     wallets = [{
-        'id': '0x804678fa97d91b974ec2af3c843270886528a9e6',
-        'address': '0x804678fa97d91b974ec2af3c843270886528a9e6',
+        'id': datum['_id'],
+        'address': datum['address'],
         'numberOfRelatedWallets': 0,
         # 'balance': 0,
         'socialAccounts': {
             'telegram': ['https://t.me/binanceexchange'],
             'twitter': ['https://twitter.com/binance']}
-    }] * 10
+    } for datum in wallets_data]
 
     return json(wallets)

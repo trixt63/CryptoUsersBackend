@@ -8,6 +8,7 @@ from sanic_ext import openapi, validate
 # from app.apis._olds.portfolio.utils.utils import get_chains
 from app.databases.arangodb.klg_database import KLGDatabase
 from app.databases.mongodb.mongodb_klg import MongoDB
+from app.databases.mongodb.mongodb_community import MongoDBCommunity
 from app.models.entity.project import OverviewQuery
 
 bp = Blueprint('lending_blueprint', url_prefix='/lending')
@@ -25,22 +26,18 @@ async def get_introduction(request: Request, project_id, query: OverviewQuery):
     # project_type, type_ = get_project_type(query.type)
 
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
-    # project = get_project(db, project_id, chains, type_, project_type)
+    project = get_project(db, project_id, chains=[chain_id])
+
+    project_url = project['socialAccounts'].pop('website')
+
     project = {
       "id": f"{project_id}",
       "projectId": f"{project_id}",
-      "name": "AAVE V2",
-      "imgUrl": "https://icons.llama.fi/aave-v2.png",
-      "chains": [
-        "0x1",
-        "0x38"
-      ],
-      "url": "https://pancakeswap.finance/",
-      "socialNetworks": {
-        "github": "https://github.com/aave",
-        "reddit": "https://www.reddit.com/r/Aave_Official",
-        "twitter": "https://twitter.com/AaveAave",
-      }
+      "name": project["name"],
+      "imgUrl": project["imgUrl"],
+      "chains": project["deployedChains"],
+      "url": project_url,
+      "socialNetworks": project["socialAccounts"],
     }
 
     return json(project)
@@ -53,12 +50,20 @@ async def get_introduction(request: Request, project_id, query: OverviewQuery):
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_stats(request: Request, project_id, query: OverviewQuery):
+    db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
+    community_db: MongoDBCommunity = request.app.ctx.community_db
+
+    chain_id = query.chain or '0x38'
+
+    app_data = get_project(db, project_id, chains=[chain_id])
+    users_data = community_db.get_project_users(chain_id, project_id)
+    if not app_data or not users_data:
+        raise NotFound(f'Project with id {project_id}')
+
     stats = {
-        "id": f"{project_id}",
-        "tvl": 0,
-        "users": 0,
-        "totalDeposited": 0,
-        "totalBorrowed": 0
+      "id": project_id,
+      "volume": app_data['tvl'],
+      "users": users_data,
     }
 
     return json(stats)
@@ -71,12 +76,24 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_top_wallets(request: Request, project_id, query: OverviewQuery):
+    community_db: MongoDBCommunity = request.app.ctx.community_db
+    chain_id = query.chain or '0x38'
+
+    data = community_db.get_sample_lending_wallets(chain_id, project_id)
+
     pairs = [{
-        'id': '0x804678fa97d91b974ec2af3c843270886528a9e6',
-        'address': '0x804678fa97d91b974ec2af3c843270886528a9e6',
+        'id': datum['_id'],
+        'address': datum['address'],
         'numberOfRelatedWallets': 0,
         'deposited': 0,
         'borrowed': 0,
-    }] * 10
+    } for datum in data]
 
     return json(pairs)
+
+
+def get_project(db: Union[MongoDB, KLGDatabase], project_id, chains=[]):
+    project = db.get_project(project_id)
+    if not project or not filter(lambda x: x in project.get('deployedChains', []), chains):
+        raise NotFound(f'Project with id {project_id}')
+    return project

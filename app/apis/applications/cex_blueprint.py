@@ -79,16 +79,6 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
 @openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_whales(request: Request, project_id, query: OverviewQuery):
-    top_wallets = [{
-        'id': project_id,
-        'depositWallets': [],
-        'userWallets': [],
-        'socialNetworks': {
-            'telegram': 'https://t.me/binanceexchange',
-            'twitter': 'https://twitter.com/binance'
-        }
-    }] * 10
-
     community_db: MongoDBCommunity = request.app.ctx.community_db
     wallets = list(community_db.get_whales_list(project_id))
 
