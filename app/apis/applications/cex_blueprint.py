@@ -19,7 +19,7 @@ bp = Blueprint('cex_blueprint', url_prefix='/cex')
 @openapi.summary("Get project introduction")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
 # @openapi.parameter(name="type", description=f"Type of project. Allowable values: defi, nft, exchange", required=True, location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="project_id", description="Project ID, eg: binance", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_overview(request: Request, project_id, query: OverviewQuery):
     chain_id = query.chain
@@ -45,11 +45,11 @@ async def get_overview(request: Request, project_id, query: OverviewQuery):
 
 @bp.get('/<project_id>/stats')
 @openapi.tag("Cex")
-@openapi.summary("Get project introduction")
+@openapi.summary("Get project introduction. Eg: binance")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
 # @openapi.parameter(name="type", description=f"Type of project. Allowable values: dex, lending, nft, exchange",
 #                    required=True, location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="project_id", description="Project ID, eg: binance", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_stats(request: Request, project_id, query: OverviewQuery):
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
@@ -74,9 +74,9 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
 
 @bp.get('/<project_id>/whales-list')
 @openapi.tag("Cex")
-@openapi.summary("Get project overview")
+@openapi.summary("Get project overview. Eg: binance")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="project_id", description="Project ID, eg: binance", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_whales(request: Request, project_id, query: OverviewQuery):
     community_db: MongoDBCommunity = request.app.ctx.community_db

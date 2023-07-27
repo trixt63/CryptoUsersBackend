@@ -16,8 +16,10 @@ bp = Blueprint('dex_pair_blueprint', url_prefix='/lp-pair')
 @bp.get('/<pair_address>/introduction')
 @openapi.tag("Dex Pair")
 @openapi.summary("Get project introduction")
-@openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="pair_address", description="Liquidation Pair address", location="path", required=True)
+# @openapi.parameter(name="project_id", description="Project ID, eg: pancakeswap", location="path", required=True)
+@openapi.parameter(name="chain", description=f"Chain ID, eg: 0x38", location="query")
+@openapi.parameter(name="pair_address", description="Liquidation Pair address, eg: 0x28415ff2c35b65b9e5c7de82126b4015ab9d031f",
+                   location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_introduction(request: Request, pair_address, query: OverviewQuery):
     chain_id = query.chain
@@ -51,8 +53,10 @@ async def get_introduction(request: Request, pair_address, query: OverviewQuery)
 @bp.get('/<pair_address>/stats')
 @openapi.tag("Dex Pair")
 @openapi.summary("Get project statistics")
-@openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="pair_address", description="Pair address", location="path", required=True)
+# @openapi.parameter(name="project_id", description="Project ID, eg: pancakeswap", location="path", required=True)
+@openapi.parameter(name="chain", description=f"Chain ID, eg: 0x38", location="query")
+@openapi.parameter(name="pair_address", description="Pair address, eg: 0x28415ff2c35b65b9e5c7de82126b4015ab9d031f",
+                   location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_stats(request: Request, pair_address, query: OverviewQuery):
     chain_id = query.chain
@@ -65,13 +69,17 @@ async def get_stats(request: Request, pair_address, query: OverviewQuery):
     dex_id = pair_data['dex']
     project_data = db.get_project(dex_id)
 
+    n_traders = community_db.get_number_pair_traders(chain_id=chain_id,
+                                                     project_id=dex_id,
+                                                     pair_address=pair_address)
+
     stats = {
         "projectId": project_data['_id'],
         "id": pair_address,
-        "traders": 0,
-        "realTraders": 0,
-        "providers": 0,
-        "realProviders": 0
+        "traders": n_traders,
+        # "realTraders": 0,
+        # "providers": 0,
+        # "realProviders": 0
     }
 
     return json(stats)
@@ -80,8 +88,9 @@ async def get_stats(request: Request, pair_address, query: OverviewQuery):
 @bp.get('/<pair_address>/top-traders')
 @openapi.tag("Dex Pair")
 @openapi.summary("Get top contracts")
-@openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="pair_address", description="Pair address", location="path", required=True)
+# @openapi.parameter(name="project_id", description="Project ID, eg: pancakeswap", location="path", required=True)
+@openapi.parameter(name="chain", description=f"Chain ID, eg: 0x38", location="query")
+@openapi.parameter(name="pair_address", description="Pair address, eg: 0x28415ff2c35b65b9e5c7de82126b4015ab9d031f", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_top_traders(request: Request, pair_address, query: OverviewQuery):
     community_db: MongoDBCommunity = request.app.ctx.community_db

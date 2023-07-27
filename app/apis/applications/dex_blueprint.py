@@ -18,7 +18,7 @@ bp = Blueprint('dex_blueprint', url_prefix='/dex')
 @openapi.tag("Dex")
 @openapi.summary("Get project overview")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="project_id", description="Project ID, eg: pancakeswap", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_introduction(request: Request, project_id, query: OverviewQuery):
     chain_id = query.chain
@@ -45,8 +45,8 @@ async def get_introduction(request: Request, project_id, query: OverviewQuery):
 @bp.get('/<project_id>/stats')
 @openapi.tag("Dex")
 @openapi.summary("Get project introduction")
-@openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="chain", description=f"Chain ID, eg: 0x38", location="query")
+@openapi.parameter(name="project_id", description="Project ID, eg: pancakeswap", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_stats(request: Request, project_id, query: OverviewQuery):
     chain_id = query.chain
@@ -59,12 +59,10 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
         raise NotFound(f'Project with id {project_id}')
 
     stats = {
-      "id": f"{project_id}",
-      "tvl": project['tvl'],
-      "traders": users_data,
-      "realTraders": 0,
-      "providers": 0,
-      "realProviders": 0
+        "id": f"{project_id}",
+        "tvl": project['tvl'],
+        "traders": users_data["traders"],
+        "deployers": users_data["deployers"]
     }
     return json(stats)
 
@@ -72,8 +70,8 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
 @bp.get('/<project_id>/top-pairs')
 @openapi.tag("Dex")
 @openapi.summary("Get project top pairs")
-@openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="chain", description=f"Chain ID, eg: 0x38", location="query")
+@openapi.parameter(name="project_id", description="Project ID, eg: pancakeswap", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_top_pairs(request: Request, project_id, query: OverviewQuery):
     # db: Union[MongoDB, KLGDatabase] = request.app.ctx.db

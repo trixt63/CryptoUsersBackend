@@ -116,7 +116,14 @@ class MongoDBCommunity:
     # Dex applications
     def _get_number_dex_users(self, project_id):
         _filter_trader = {f"tradedLPs.{project_id}": {"$exists": 1}}
-        return self._lp_traders_col.count_documents(_filter_trader)
+
+        _filter_depoyer = {f"deployedLPs.{project_id}": {"$exists": 1}}
+        n_deployers = self._lp_deployers_col.count_documents(_filter_trader)
+        n_traders = self._lp_traders_col.count_documents(_filter_trader)
+        return {
+            "deployers": n_deployers,
+            "traders": n_traders
+        }
 
     def get_top_pairs(self, project_id, limit=100):
         _filter = {'dex': project_id}
@@ -128,6 +135,12 @@ class MongoDBCommunity:
     def get_dex_pair(self, chain_id, address):
         cursor = self._lp_tokens_col.find_one(filter={'_id': f"{chain_id}_{address}"})
         return cursor
+
+    def get_number_pair_traders(self, chain_id, project_id, pair_address):
+        # _filter = {f'tradedLPs.'}
+        _filter = {f"tradedLPs.{project_id}": {'chainId': chain_id, 'address': pair_address}}
+        n_traders = self._lp_traders_col.count_documents(_filter)
+        return n_traders
 
     # Lending pools
     def _get_number_lending_users(self, project_id):

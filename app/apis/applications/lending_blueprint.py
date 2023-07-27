@@ -17,8 +17,8 @@ bp = Blueprint('lending_blueprint', url_prefix='/lending')
 @bp.get('/<project_id>/introduction')
 @openapi.tag("Lending")
 @openapi.summary("Get project overview")
-@openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="chain", description=f"Chain ID, eg: 0x38", location="query")
+@openapi.parameter(name="project_id", description="Project ID, eg: compound", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_introduction(request: Request, project_id, query: OverviewQuery):
     chain_id = query.chain
@@ -46,8 +46,8 @@ async def get_introduction(request: Request, project_id, query: OverviewQuery):
 @bp.get('/<project_id>/stats')
 @openapi.tag("Lending")
 @openapi.summary("Get project introduction")
-@openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="chain", description=f"Chain ID, eg: 0x38", location="query")
+@openapi.parameter(name="project_id", description="Project ID, eg: compound", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_stats(request: Request, project_id, query: OverviewQuery):
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
@@ -72,8 +72,8 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
 @bp.get('/<project_id>/top-wallets')
 @openapi.tag("Lending")
 @openapi.summary("Get project top pairs")
-@openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="chain", description=f"Chain ID, eg: 0x38", location="query")
+@openapi.parameter(name="project_id", description="Project ID, eg: compound", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_top_wallets(request: Request, project_id, query: OverviewQuery):
     community_db: MongoDBCommunity = request.app.ctx.community_db
@@ -81,7 +81,7 @@ async def get_top_wallets(request: Request, project_id, query: OverviewQuery):
 
     data = community_db.get_sample_lending_wallets(chain_id, project_id)
 
-    pairs = [{
+    wallets = [{
         'id': datum['_id'],
         'address': datum['address'],
         'numberOfRelatedWallets': 0,
@@ -89,7 +89,7 @@ async def get_top_wallets(request: Request, project_id, query: OverviewQuery):
         'borrowed': 0,
     } for datum in data]
 
-    return json(pairs)
+    return json(wallets)
 
 
 def get_project(db: Union[MongoDB, KLGDatabase], project_id, chains=[]):
