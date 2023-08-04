@@ -105,9 +105,12 @@ class MongoDBCommunity:
         _filter = {"depositedExchanges": project_id}
         return self._deposit_wallets_col.count_documents(_filter)
 
-    def get_whales_list(self, project_id):
-        cursor = self._groups_col.find({'num_user': {'$gt': 1}}).limit(25)
-        return cursor
+    def get_whales_list(self, project_id, chain_id):
+        _filter = {"depositedExchanges": project_id}
+        deposit_wallets = self._deposit_wallets_col.find(_filter).limit(100000)
+        list_deposit_addresses = [deposit_wallet['address'] for deposit_wallet in deposit_wallets]
+        users = self._groups_col.find({'Chain': chain_id, 'deposit_wallets': {'$in': list_deposit_addresses}}).limit(25)
+        return users
 
     # Dex applications
     def _get_number_dex_users(self, project_id):
