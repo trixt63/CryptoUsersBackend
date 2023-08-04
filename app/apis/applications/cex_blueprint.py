@@ -92,11 +92,6 @@ async def get_whales(request: Request, project_id, query: OverviewQuery):
             'id': project_id,
             'userWallets': group['user_wallets'],
             'depositWallets': group['deposit_wallets'],
-            # TODO: remove socials
-            'socialNetworks': {
-                'telegram': 'https://t.me/binanceexchange',
-                'twitter': 'https://twitter.com/binance'
-            }
         }
         for group in groups
     ]
