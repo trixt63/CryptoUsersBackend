@@ -99,16 +99,18 @@ async def get_top_traders(request: Request, pair_address, query: OverviewQuery):
     pair_data = community_db.get_dex_pair(chain_id, pair_address)
     project_id = pair_data['dex']
 
-    wallets_data = community_db.get_sample_dex_traders_wallets(chain_id, project_id)
+    wallets_data = community_db.get_sample_pair_traders_wallets(project_id=project_id,
+                                                                pair_address=pair_address,
+                                                                chain_id=chain_id)
 
     wallets = [{
         'id': datum['_id'],
         'address': datum['address'],
-        'numberOfRelatedWallets': 0,
+        # 'numberOfRelatedWallets': 0,
         # 'balance': 0,
-        'socialAccounts': {
-            'telegram': ['https://t.me/binanceexchange'],
-            'twitter': ['https://twitter.com/binance']}
+        # 'socialAccounts': {
+        #     'telegram': ['https://t.me/binanceexchange'],
+        #     'twitter': ['https://twitter.com/binance']}
     } for datum in wallets_data]
 
     return json(wallets)

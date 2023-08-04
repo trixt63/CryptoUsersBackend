@@ -105,12 +105,8 @@ class MongoDBCommunity:
         _filter = {"depositedExchanges": project_id}
         return self._deposit_wallets_col.count_documents(_filter)
 
-    # def get_top_cex_users(self, project_id, limit=100):
-    #     _filter = {'exchange': project_id, 'socialAccounts': {"$exists": 1}}
-    #     cursor = self._cex_users_col.find(_filter).limit(limit)
-    #     return cursor
     def get_whales_list(self, project_id):
-        cursor = self._groups_col.find({'num_user': {'$gt': 1}}).limit(100)
+        cursor = self._groups_col.find({'num_user': {'$gt': 1}}).limit(25)
         return cursor
 
     # Dex applications
@@ -125,7 +121,7 @@ class MongoDBCommunity:
             "traders": n_traders
         }
 
-    def get_top_pairs(self, project_id, limit=100):
+    def get_top_pairs(self, project_id, limit=25):
         _filter = {'dex': project_id}
         _projection = {'factory': 0, 'dex': 0, 'pairId': 0}
         _sort = ("pairBalanceInUSD", -1)
@@ -150,12 +146,17 @@ class MongoDBCommunity:
     # Sample top wallets
     def get_sample_dex_traders_wallets(self, chain_id, project_id):
         _filter = {f"lpTraded.{project_id}": {"$exists": 1}}
-        cursor = self._lp_traders_col.find(_filter).limit(10)
+        cursor = self._lp_traders_col.find(_filter).limit(25)
         return cursor
 
     def get_sample_lending_wallets(self, chain_id, project_id):
         _filter = {f"lendingPools.{project_id}": {"$exists": 1}}
-        cursor = self._lending_wallets_col.find(_filter).limit(10)
+        cursor = self._lending_wallets_col.find(_filter).limit(25)
+        return cursor
+
+    def get_sample_pair_traders_wallets(self, project_id, chain_id, pair_address):
+        _filter = {f"tradedLPs.{project_id}": {'chainId': chain_id, 'address': pair_address}}
+        cursor = self._lp_traders_col.find(_filter).limit(25)
         return cursor
 
     #######################
