@@ -29,7 +29,7 @@ async def get_overview(request: Request, project_id, query: OverviewQuery):
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
     data = get_project(db, project_id, chains=[chain_id])
 
-    project_socials = data.get('socialAccounts', None)
+    project_socials = data.get('socialAccounts', {})
     project_url = None
     if project_socials:
         project_url = project_socials.pop('website')
@@ -40,7 +40,6 @@ async def get_overview(request: Request, project_id, query: OverviewQuery):
       "name": data["name"],
       "imgUrl": data["imgUrl"],
       "url": project_url,
-      # "socialNetworks": data["socialAccounts"],
       "socialNetworks": project_socials,
       "chains": data.get('deployedChains', []),
     }
