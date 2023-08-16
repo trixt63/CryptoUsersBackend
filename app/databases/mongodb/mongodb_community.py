@@ -26,7 +26,7 @@ class MongoDBCommunity:
         self._projects_col = self._db[PROJECTS_COL]
 
         self._deposit_wallets_col = self._db['depositWallets']
-        self._deposit_connections_col = self._db['deposit_connections']
+        # self._deposit_connections_col = self._db['deposit_connections']
         self._users_social_col = self._db['users']
         self._social_deposit_col = self._db['userSocial_deposit']
 
@@ -53,7 +53,7 @@ class MongoDBCommunity:
     def count_users_by_category(self, category: str):
         """Get number of users for Intro pages"""
         if category == 'Cexes':
-            return self._deposit_connections_col.estimated_document_count()
+            return self._deposit_wallets_col.estimated_document_count()
         elif category == 'Lending':
             logger.info(self._lending_wallets_col.estimated_document_count())
             return self._lending_wallets_col.estimated_document_count()
@@ -155,6 +155,13 @@ class MongoDBCommunity:
     def get_sample_lending_wallets(self, chain_id, project_id):
         _filter = {f"lendingPools.{project_id}": {"$exists": 1}}
         cursor = self._lending_wallets_col.find(_filter).limit(25)
+        return cursor
+
+    def get_sample_traders_wallets(self, project_id, chain_id):
+        # _filter = {f"tradedLPs.{project_id}.chainId" : chain_id}
+        # cursor = self._lp_traders_col.find(_filter).limit(25)
+        _filter = {f"tradedLPs.{project_id}": {"$exists": 1}}
+        cursor = self._lp_traders_col.find(_filter).limit(25)
         return cursor
 
     def get_sample_pair_traders_wallets(self, project_id, chain_id, pair_address):

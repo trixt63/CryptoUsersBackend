@@ -51,12 +51,13 @@ async def get_types_info(request: Request, query):
     community_db: MongoDBCommunity = request.app.ctx.community_db
     data = list(community_db.get_applications(category="Cexes",
                                               sort_by="spotVolume",
-                                              chain=chain_id))
+                                              # chain=chain_id))
+                                              ))
     for datum in data:
         datum['id'] = datum['_id']
         datum['category'] = 'CEX'
-        datum['numberOfUsers'] = 0
-        datum['numberOfRealUsers'] = 0
+        datum['numberOfUsers'] = community_db._get_number_cex_users(chain_id=None, project_id=datum['_id'])
+        # datum['numberOfRealUsers'] = 0
     return json({
         'numberOfDocs': len(data),
         'docs': data
@@ -77,8 +78,8 @@ async def get_types_info(request: Request, query):
     for datum in data:
         datum['id'] = datum['_id']
         datum['category'] = 'DEX'
-        datum['numberOfUsers'] = 0
-        datum['numberOfRealUsers'] = 0
+        # datum['numberOfUsers'] = 0
+        datum['numberOfUsers'] = community_db._get_number_dex_users(project_id=datum['_id'])
     return json({
         'numberOfDocs': len(data),
         'docs': data
@@ -99,8 +100,9 @@ async def get_types_info(request: Request, query: OverviewQuery):
     for datum in data:
         datum['id'] = datum['_id']
         datum['category'] = 'Lending'
-        datum['numberOfUsers'] = 0
-        datum['numberOfRealUsers'] = 0
+        # datum['numberOfUsers'] = 0
+        datum['numberOfUsers'] = community_db._get_number_lending_users(project_id=datum['_id'])
+        # datum['numberOfRealUsers'] = 0
     return json({
         'numberOfDocs': len(data),
         'docs': data

@@ -23,8 +23,6 @@ bp = Blueprint('cex_blueprint', url_prefix='/cex')
 @validate(query=OverviewQuery)
 async def get_overview(request: Request, project_id, query: OverviewQuery):
     chain_id = query.chain
-    # chains = get_chains(chain_id)
-    # project_type, type_ = get_project_type(query.type)
 
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
     data = get_project(db, project_id, chains=[chain_id])

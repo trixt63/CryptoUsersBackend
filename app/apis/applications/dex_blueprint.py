@@ -5,7 +5,6 @@ from sanic import json
 from sanic.exceptions import NotFound, BadRequest
 from sanic_ext import openapi, validate
 
-# from app.apis._olds.portfolio.utils.utils import get_chains
 from app.databases.arangodb.klg_database import KLGDatabase
 from app.databases.mongodb.mongodb_klg import MongoDB
 from app.databases.mongodb.mongodb_community import MongoDBCommunity
@@ -22,25 +21,26 @@ bp = Blueprint('dex_blueprint', url_prefix='/dex')
 @validate(query=OverviewQuery)
 async def get_introduction(request: Request, project_id, query: OverviewQuery):
     chain_id = query.chain
-    # chains = get_chains(chain_id)
-    # project_type, type_ = get_project_type(query.type)
 
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
-    project = get_project(db, project_id=project_id)
-    # project = get_project(db, project_id, chains, type_, project_type)
-    project_url = project["socialAccounts"].pop('website')
+    data = get_project(db, project_id, chains=[chain_id])
+
+    project_socials = data.get('socialAccounts', {})
+    project_url = None
+    if project_socials:
+        project_url = project_socials.pop('website')
+
     project = {
       "id": f"{project_id}",
       "projectId": f"{project_id}",
-      "name": project["name"],
-      "imgUrl": project["imgUrl"],
-      "chains": project["deployedChains"],
+      "name": data["name"],
+      "imgUrl": data["imgUrl"],
       "url": project_url,
-      "socialNetworks": project["socialAccounts"],
+      "socialNetworks": project_socials,
+      "chains": data.get('deployedChains', []),
     }
 
-    return json(dict(project))
-
+    return json(project)
 
 @bp.get('/<project_id>/stats')
 @openapi.tag("Dex")
@@ -88,6 +88,34 @@ async def get_top_pairs(request: Request, project_id, query: OverviewQuery):
             'token1': datum['token1']
         }
         for datum in data
+    ]
+
+    return json(returned_data)
+
+
+@bp.get('/<project_id>/top-traders')
+@openapi.tag("Dex")
+@openapi.summary("Get project overview")
+@openapi.parameter(name="chain", description=f"Chain ID", location="query")
+@openapi.parameter(name="project_id", description="Project ID, eg: pancakeswap", location="path", required=True)
+@validate(query=OverviewQuery)
+async def get_top_traders(request: Request, project_id, query: OverviewQuery):
+    chain_id = query.chain
+    if not chain_id:
+        dex_chain_mappers = {'pancakeswap': '0x38', 'spookyswap': '0xfa', 'uniswap-v2': '0x1'}
+        chain_id = dex_chain_mappers[project_id]
+
+    community_db: MongoDBCommunity = request.app.ctx.community_db
+
+    wallets_data = community_db.get_sample_traders_wallets(project_id=project_id,
+                                                           chain_id=chain_id)
+
+    returned_data = [
+        {
+            'id': project_id,
+            'address': datum['address'],
+        }
+        for datum in wallets_data
     ]
 
     return json(returned_data)
