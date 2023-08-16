@@ -4,12 +4,8 @@ from pymongo import MongoClient, UpdateOne
 from pymongo.cursor import Cursor
 
 from app.constants.mongo_constants import MongoDBCollections
-from app.constants.network_constants import DEFAULT_CREDIT_SCORE
-from app.constants.score_constants import WalletCreditScoreWeightConstant
 from app.constants.search_constants import SearchConstants
 from app.decorators.time_exe import sync_log_time_exe, TimeExeTag
-from app.utils.format_utils import about
-from app.utils.list_dict_utils import sort_log
 from app.utils.logger_utils import get_logger
 from app.utils.search_data_utils import get_smart_contract_type
 from config import MongoDBConfig
@@ -62,11 +58,6 @@ class MongoDB:
             filter_statement.update({'deployedChains': chain})
         if category is not None:
             filter_statement.update({'category': category})
-        # if last_updated_at is not None:
-        #     if type_ is not None:
-        #         filter_statement.update({f'lastUpdated.{type_}': {'$gt': last_updated_at}})
-        #     else:
-        #         filter_statement.update({f'lastUpdatedAt': {'$gt': last_updated_at}})
         projection_statement = self.get_projection_statement(projection)
 
         cursor = self._projects_col.find(filter_statement, projection=projection_statement, batch_size=1000)
@@ -75,7 +66,7 @@ class MongoDB:
 
     @sync_log_time_exe(tag=TimeExeTag.database)
     def count_projects_by_type(self, type_=None, chain=None, category=None, last_updated_at=None):
-        filter_statement = {}
+        filter_statement = dict()
         if type_ is not None:
             filter_statement.update({'sources': type_})
         if chain is not None:
@@ -95,112 +86,12 @@ class MongoDB:
         return self._projects_col.find_one({'_id': project_id}, projection=projection_statement)
 
     #######################
-    #      Contract       #
-    #######################
-
-    @sync_log_time_exe(tag=TimeExeTag.database)
-    def get_contracts_by_type(self, type_=None, chain_id=None, sort_by=None, reverse=False, skip=None, limit=None,
-                              projection=None, last_updated_at=None, batch_size=10000):
-        filter_statement = {}
-        if type_ is not None:
-            if type_ == 'token':
-                filter_statement.update({'idCoingecko': {'$exists': True}})
-            else:
-                filter_statement.update({'tags': type_})
-        if chain_id is not None:
-            filter_statement.update({'chainId': chain_id})
-        if last_updated_at is not None:
-            if type_ is not None:
-                filter_statement.update({f'lastUpdated.{type_}': {'$gt': last_updated_at}})
-            else:
-                filter_statement.update({f'lastUpdatedAt': {'$gt': last_updated_at}})
-
-        projection_statement = self.get_projection_statement(projection)
-
-        cursor = self._smart_contracts_col.find(filter_statement, projection=projection_statement, batch_size=batch_size)
-        cursor = self.get_pagination_statement(cursor, sort_by, reverse, skip, limit)
-        return cursor
-
-    @sync_log_time_exe(tag=TimeExeTag.database)
-    def count_contracts_by_type(self, type_=None, last_updated_at=None):
-        filter_statement = {}
-        if type_ is not None:
-            if type_ == 'token':
-                filter_statement.update({'idCoingecko': {'$exists': True}})
-            else:
-                filter_statement.update({'tags': type_})
-        if last_updated_at is not None:
-            if type_ is not None:
-                filter_statement.update({f'lastUpdated.{type_}': {'$gt': last_updated_at}})
-            else:
-                filter_statement.update({f'lastUpdatedAt': {'$gt': last_updated_at}})
-
-        return self._smart_contracts_col.count_documents(filter_statement)
-
-    @sync_log_time_exe(tag=TimeExeTag.database)
-    def get_contracts_by_keys(self, keys, projection=None):
-        filter_statement = {'_id': {'$in': keys}}
-        projection_statement = self.get_projection_statement(projection)
-        cursor = self._smart_contracts_col.find(filter_statement, projection=projection_statement, batch_size=1000)
-        return cursor
-
-    @sync_log_time_exe(tag=TimeExeTag.database)
-    def get_contract_by_key(self, key, projection=None):
-        projection_statement = self.get_projection_statement(projection)
-        return self._smart_contracts_col.find_one({'_id': key}, projection=projection_statement)
-
-    @sync_log_time_exe(tag=TimeExeTag.database)
-    def get_protocols(self, projection=None):
-        filter_statement = {'lendingInfo': {'$exists': True}}
-        projection_statement = self.get_projection_statement(projection)
-        cursor = self._smart_contracts_col.find(filter_statement, projection=projection_statement, batch_size=1000)
-        return cursor
-
-    @sync_log_time_exe(tag=TimeExeTag.database)
-    def get_contracts_by_address(self, address, chains=None, projection=None):
-        if chains is not None:
-            keys = [f'{chain}_{address}' for chain in chains]
-            filter_statement = {'_id': {'$in': keys}}
-        else:
-            filter_statement = {'address': address}
-
-        projection_statement = self.get_projection_statement(projection)
-        cursor = self._smart_contracts_col.find(filter_statement, projection=projection_statement)
-        return cursor
-
-    #######################
     #       Token         #
     #######################
 
-    def get_token_by_id_coingecko(self, coin_id, chain_id=None, projection=None):
-        filter_statement = {'idCoingecko': coin_id}
-        if chain_id is not None:
-            filter_statement.update({'chainId': chain_id})
-        projection_statement = self.get_projection_statement(projection)
-        cursor = self._smart_contracts_col.find(filter_statement, projection=projection_statement)
+    def get_token(self, chain_id, address):
+        cursor = self._smart_contracts_col.find_one({'_id': f"{chain_id}_{address}"})
         return cursor
-
-    def get_tokens_by_id(self, token_id, chains, projection=None):
-        filter_statement = {}
-        chain_id = token_id.split('_')[0]
-        if chain_id in chains:
-            filter_statement.update({'_id': token_id})
-        else:
-            filter_statement.update({'idCoingecko': token_id, 'chainId': {'$in': chains}})
-
-        if (projection is not None) and ('tags' not in projection):
-            projection.append('tags')
-        projection_statement = self.get_projection_statement(projection)
-
-        cursor = self._smart_contracts_col.find(filter_statement, projection=projection_statement)
-
-        tokens = []
-        for doc in cursor:
-            contract_type = get_smart_contract_type(doc)
-            if contract_type != SearchConstants.token:
-                continue
-            tokens.append(doc)
-        return tokens
 
     #######################
     #      Wallet         #
@@ -251,54 +142,6 @@ class MongoDB:
         projection_statement = self.get_projection_statement(projection)
         cursor = self._wallets_col.find(filter_statement, projection=projection_statement, batch_size=1000)
         return cursor
-
-    #######################
-    #       Scores        #
-    #######################
-
-    @sync_log_time_exe(tag=TimeExeTag.database)
-    def get_score_change_logs(self, address: str):
-        filter_statement = {'_id': address}
-        projection_statement = self.get_projection_statement(['creditScore', 'creditScoreChangeLogs'])
-        doc = self._multichain_wallets_credit_scores_col.find_one(filter_statement, projection=projection_statement)
-        if not doc:
-            return DEFAULT_CREDIT_SCORE, {}
-
-        credit_score = doc.get('creditScore') or DEFAULT_CREDIT_SCORE
-        score_logs = sort_log(doc.get('creditScoreChangeLogs'))
-        return credit_score, score_logs
-
-    def get_score_details(self, address):
-        filter_statement = {'_id': address}
-        projection_statement = self.get_projection_statement(
-            ['creditScorex1', 'creditScorex2', 'creditScorex3', 'creditScorex4', 'creditScorex5'])
-        doc = self._multichain_wallets_credit_scores_col.find_one(filter_statement, projection=projection_statement)
-        if (not doc) or (not doc.get('creditScorex1')):
-            return {}
-
-        x1 = WalletCreditScoreWeightConstant.b11 * doc['creditScorex1'][0] + \
-            WalletCreditScoreWeightConstant.b12 * doc['creditScorex1'][1]
-
-        x2 = WalletCreditScoreWeightConstant.b21 * doc['creditScorex2'][0] + \
-            WalletCreditScoreWeightConstant.b22 * doc['creditScorex2'][1] + \
-            WalletCreditScoreWeightConstant.b23 * doc['creditScorex2'][2] + \
-            WalletCreditScoreWeightConstant.b24 * doc['creditScorex2'][3] + \
-            WalletCreditScoreWeightConstant.b25 * doc['creditScorex2'][4]
-
-        x3 = about(doc['creditScorex3'][0] - (1000 - doc['creditScorex3'][1]))
-
-        x4 = WalletCreditScoreWeightConstant.b41 * doc['creditScorex4'][0]
-
-        x5 = WalletCreditScoreWeightConstant.b51 * doc['creditScorex5'][0] + \
-            WalletCreditScoreWeightConstant.b52 * doc['creditScorex5'][1]
-
-        return {
-            'assets': x1,
-            'transactions': x2,
-            'loan': x3,
-            'circulatingAssets': x4,
-            'trustworthinessAssets': x5
-        }
 
     #######################
     #        ABI          #

@@ -5,7 +5,7 @@ from sanic import json
 from sanic.exceptions import NotFound, BadRequest
 from sanic_ext import openapi, validate
 
-from app.apis._olds.portfolio.utils.utils import get_chains
+# from app.apis._olds.portfolio.utils.utils import get_chains
 from app.databases.arangodb.klg_database import KLGDatabase
 from app.databases.mongodb.mongodb_klg import MongoDB
 from app.databases.mongodb.mongodb_community import MongoDBCommunity
@@ -19,24 +19,27 @@ bp = Blueprint('cex_blueprint', url_prefix='/cex')
 @openapi.summary("Get project introduction")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
 # @openapi.parameter(name="type", description=f"Type of project. Allowable values: defi, nft, exchange", required=True, location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="project_id", description="Project ID, eg: binance", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_overview(request: Request, project_id, query: OverviewQuery):
     chain_id = query.chain
-    chains = get_chains(chain_id)
-    # project_type, type_ = get_project_type(query.type)
 
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
-    data = get_project(db, project_id)
+    data = get_project(db, project_id, chains=[chain_id])
 
-    project_url = data["socialAccounts"].pop('website')
+    project_socials = data.get('socialAccounts', {})
+    project_url = None
+    if project_socials:
+        project_url = project_socials.pop('website')
+
     project = {
       "id": f"{project_id}",
       "projectId": f"{project_id}",
       "name": data["name"],
       "imgUrl": data["imgUrl"],
       "url": project_url,
-      "socialNetworks": data["socialAccounts"]
+      "socialNetworks": project_socials,
+      "chains": data.get('deployedChains', []),
     }
 
     return json(project)
@@ -44,24 +47,27 @@ async def get_overview(request: Request, project_id, query: OverviewQuery):
 
 @bp.get('/<project_id>/stats')
 @openapi.tag("Cex")
-@openapi.summary("Get project introduction")
+@openapi.summary("Get project introduction. Eg: binance")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
 # @openapi.parameter(name="type", description=f"Type of project. Allowable values: dex, lending, nft, exchange",
 #                    required=True, location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="project_id", description="Project ID, eg: binance", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_stats(request: Request, project_id, query: OverviewQuery):
     db: Union[MongoDB, KLGDatabase] = request.app.ctx.db
     community_db: MongoDBCommunity = request.app.ctx.community_db
 
-    app_data = get_project(db, project_id)
-    users_data = community_db.get_project_users(project_id)
+    chain_id = query.chain or '0x38'
+    # chains = get_chains(chain_id)
+
+    app_data = get_project(db, project_id, chains=[chain_id])
+    users_data = community_db.get_project_users(chain_id, project_id)
     if not app_data or not users_data:
         raise NotFound(f'Project with id {project_id}')
 
     stats = {
       "id": project_id,
-      "volume": 95915987738.03323,
+      "volume": app_data['spotVolume'],
       "users": users_data,
     }
 
@@ -70,27 +76,28 @@ async def get_stats(request: Request, project_id, query: OverviewQuery):
 
 @bp.get('/<project_id>/whales-list')
 @openapi.tag("Cex")
-@openapi.summary("Get project overview")
+@openapi.summary("Get project overview. Eg: binance")
 @openapi.parameter(name="chain", description=f"Chain ID", location="query")
-@openapi.parameter(name="project_id", description="Project ID", location="path", required=True)
+@openapi.parameter(name="project_id", description="Project ID, eg: binance", location="path", required=True)
 @validate(query=OverviewQuery)
 async def get_whales(request: Request, project_id, query: OverviewQuery):
-    # whales = [{
-    #     'id': '0xf977814e90da44bfa03b6295a0616a897441acec',
-    #     'address': '0xf977814e90da44bfa03b6295a0616a897441acec',
-    #     'estimatedBalance': 75034499.975,
-    #     'socialNetworks': {
-    #         'telegram': 'https://t.me/binanceexchange',
-    #         'twitter': 'https://twitter.com/binance'}
-    # }] * 100
-
+    chain_id = query.chain or '0x38'
     community_db: MongoDBCommunity = request.app.ctx.community_db
-    wallets = list(community_db.get_top_cex_users(project_id))
+    groups = list(community_db.get_whales_list(project_id, chain_id=chain_id))
 
-    return json(wallets)
+    returned_data = [
+        {
+            'id': project_id,
+            'userWallets': group['user_wallets'],
+            'depositWallets': group['deposit_wallets'],
+        }
+        for group in groups
+    ]
+
+    return json(returned_data)
 
 
-def get_project(db: Union[MongoDB, KLGDatabase], project_id, chains=[]):
+def get_project(db: Union[MongoDB, KLGDatabase], project_id, chains):
     project = db.get_project(project_id)
     if not project or not filter(lambda x: x in project.get('deployedChains', []), chains):
         raise NotFound(f'Project with id {project_id}')

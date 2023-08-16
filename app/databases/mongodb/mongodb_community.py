@@ -26,10 +26,11 @@ class MongoDBCommunity:
         self._projects_col = self._db[PROJECTS_COL]
 
         self._deposit_wallets_col = self._db['depositWallets']
-        self._deposit_connections_col = self._db['deposit_connections']
+        # self._deposit_connections_col = self._db['deposit_connections']
         self._users_social_col = self._db['users']
         self._social_deposit_col = self._db['userSocial_deposit']
-        self._cex_users_col = self._db['cexUsers']
+
+        self._groups_col = self._db['groups']
 
         self._lp_deployers_col = self._db['lpDeployers']
         self._lp_traders_col = self._db['lpTraders']
@@ -42,7 +43,9 @@ class MongoDBCommunity:
         if 'wallets_number_of_txs_index_1' not in self._wallets_col.index_information():
             self._wallets_col.create_index([('number_of_txs', 1)], name='wallets_number_of_txs_index_1')
 
-    # Home API
+    #######################
+    #       Home API      #
+    #######################
     def count_projects_by_category(self, category: str):
         _filter = {'category': category}
         return self._projects_col.count_documents(_filter)
@@ -50,7 +53,7 @@ class MongoDBCommunity:
     def count_users_by_category(self, category: str):
         """Get number of users for Intro pages"""
         if category == 'Cexes':
-            return self._deposit_connections_col.estimated_document_count()
+            return self._deposit_wallets_col.estimated_document_count()
         elif category == 'Lending':
             logger.info(self._lending_wallets_col.estimated_document_count())
             return self._lending_wallets_col.estimated_document_count()
@@ -80,13 +83,15 @@ class MongoDBCommunity:
         cursor = self.get_pagination_statement(cursor, sort_by, reverse, skip, limit)
         return cursor
 
-    # Application API
-    def get_project_users(self, project_id, projection=None):
+    #######################
+    #     Applications    #
+    #######################
+    def get_project_users(self, chain_id, project_id, projection=None):
         """Get number of users of project"""
         projection_statement = self.get_projection_statement(projection)
-        project_data = self._projects_col.find_one({'_id': project_id}, projection=projection_statement)
+        project_data = self._projects_col.find_one(filter={'_id': project_id})
         if project_data['category'] == 'Cexes':
-            return self._get_number_cex_users(project_id)
+            return self._get_number_cex_users(chain_id, project_id)
         elif project_data['category'] == 'Dexes':
             return self._get_number_dex_users(project_id)
         elif project_data['category'] == 'Lending':
@@ -94,25 +99,79 @@ class MongoDBCommunity:
         else:
             return None
 
-    def _get_number_cex_users(self, project_id):
-        _filter = {f"depositedExchanges.{project_id}": {'$exists': 1}}
+    # Cex application
+    def _get_number_cex_users(self, chain_id, project_id):
+        # TODO: add chainId
+        _filter = {"depositedExchanges": project_id}
         return self._deposit_wallets_col.count_documents(_filter)
 
-    def _get_number_dex_users(self, project_id):
-        _filter_trader = {f"traderLPs.{project_id}": {"$exists": 1}}
-        return self._lp_traders_col.count_documents(_filter_trader)
+    def get_whales_list(self, project_id, chain_id):
+        _filter = {"depositedExchanges": project_id}
+        deposit_wallets = self._deposit_wallets_col.find(_filter).limit(100000)
+        list_deposit_addresses = [deposit_wallet['address'] for deposit_wallet in deposit_wallets]
+        users = self._groups_col.find({'Chain': chain_id, 'deposit_wallets': {'$in': list_deposit_addresses}}).limit(25)
+        return users
 
+    # Dex applications
+    def _get_number_dex_users(self, project_id):
+        _filter_trader = {f"tradedLPs.{project_id}": {"$exists": 1}}
+
+        _filter_depoyer = {f"deployedLPs.{project_id}": {"$exists": 1}}
+        n_deployers = self._lp_deployers_col.count_documents(_filter_trader)
+        n_traders = self._lp_traders_col.count_documents(_filter_trader)
+        return {
+            "deployers": n_deployers,
+            "traders": n_traders
+        }
+
+    def get_top_pairs(self, project_id, limit=25):
+        _filter = {'dex': project_id}
+        _projection = {'factory': 0, 'dex': 0, 'pairId': 0}
+        _sort = ("pairBalanceInUSD", -1)
+        cursor = self._lp_tokens_col.find(filter=_filter, projection=_projection).sort(*_sort).limit(limit)
+        return cursor
+
+    def get_dex_pair(self, chain_id, address):
+        cursor = self._lp_tokens_col.find_one(filter={'_id': f"{chain_id}_{address}"})
+        return cursor
+
+    def get_number_pair_traders(self, chain_id, project_id, pair_address):
+        # _filter = {f'tradedLPs.'}
+        _filter = {f"tradedLPs.{project_id}": {'chainId': chain_id, 'address': pair_address}}
+        n_traders = self._lp_traders_col.count_documents(_filter)
+        return n_traders
+
+    # Lending pools
     def _get_number_lending_users(self, project_id):
         _filter = {f"lendingPools.{project_id}": {"$exists": 1}}
         return self._lending_wallets_col.count_documents(_filter)
 
-    # Cex application
-    def get_top_cex_users(self, project_id, limit=100):
-        _filter = {'exchange': project_id, 'socialAccounts': {"$exists": 1}}
-        cursor = self._cex_users_col.find(_filter).limit(limit)
+    # Sample top wallets
+    def get_sample_dex_traders_wallets(self, chain_id, project_id):
+        _filter = {f"lpTraded.{project_id}": {"$exists": 1}}
+        cursor = self._lp_traders_col.find(_filter).limit(25)
         return cursor
 
-    # The next 3 functions are for analysis purpose ###
+    def get_sample_lending_wallets(self, chain_id, project_id):
+        _filter = {f"lendingPools.{project_id}": {"$exists": 1}}
+        cursor = self._lending_wallets_col.find(_filter).limit(25)
+        return cursor
+
+    def get_sample_traders_wallets(self, project_id, chain_id):
+        # _filter = {f"tradedLPs.{project_id}.chainId" : chain_id}
+        # cursor = self._lp_traders_col.find(_filter).limit(25)
+        _filter = {f"tradedLPs.{project_id}": {"$exists": 1}}
+        cursor = self._lp_traders_col.find(_filter).limit(25)
+        return cursor
+
+    def get_sample_pair_traders_wallets(self, project_id, chain_id, pair_address):
+        _filter = {f"tradedLPs.{project_id}": {'chainId': chain_id, 'address': pair_address}}
+        cursor = self._lp_traders_col.find(_filter).limit(25)
+        return cursor
+
+    #######################
+    #   Analysis Purpose  #
+    #######################
     def count_wallets(self, _filter):
         _count = self._wallets_col.count_documents(_filter)
         return _count
